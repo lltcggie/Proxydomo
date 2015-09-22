@@ -1094,11 +1094,12 @@ const UChar* CNode_List::match(const UChar* start, const UChar* stop, MatchData*
 		for (auto& node : m_phashedCollection->deqNormalNode) {
 			const UChar* ptr = node.node->match(start, stop, pMatch);
 			if (ptr) {
-				start = ptr;
-				const UChar* ret = m_nextNode ? m_nextNode->match(start, stop, pMatch) : start;
-				if (ret)
+				auto start_tmp = ptr;
+				const UChar* ret = m_nextNode ? m_nextNode->match(start_tmp, stop, pMatch) : start_tmp;
+				if (ret) {
 					pMatch->matchListLog.emplace_back(m_name, node.listLine);
-				return ret;
+					return ret;
+				}
 			}
 		}
     }
