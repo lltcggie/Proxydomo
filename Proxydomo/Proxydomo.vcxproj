@@ -20,6 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{DDADC3EE-73B1-4DED-9073-F4AF4755B6D4}</ProjectGuid>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -37,7 +38,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140_xp</PlatformToolset>
+    <PlatformToolset>v140</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
@@ -66,29 +67,25 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>$(SolutionDir)icu\lib;$(SolutionDir)zlib\x86\lib;D:\Program\boost_1_56_0\lib\lib;$(LibraryPath)</LibraryPath>
-    <IncludePath>$(SolutionDir)wolfssl;$(SolutionDir)icu\include;$(SolutionDir)zlib\x86\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)icu\lib;$(SolutionDir)zlib\$(PlatformShortName)\lib;$(SolutionDir)boost\$(PlatformShortName)\lib;$(OutDir);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)wolfssl;$(SolutionDir)icu\include;$(SolutionDir)WTL\Include;$(SolutionDir)boost\$(PlatformShortName)\include\boost-1_59;$(SolutionDir)zlib\$(PlatformShortName)\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)wolfssl;$(SolutionDir)icu\include;D:\Program\WTL81_12085\Include;$(SolutionDir)zlib\x64\include;$(IncludePath)</IncludePath>
-    <OutDir>$(SolutionDir)$(Configuration)$(Platform)\</OutDir>
-    <IntDir>$(Configuration)$(Platform)\</IntDir>
+    <IncludePath>$(SolutionDir)wolfssl;$(SolutionDir)icu\include;$(SolutionDir)WTL\Include;$(SolutionDir)boost\$(PlatformShortName)\include\boost-1_59;$(SolutionDir)zlib\$(PlatformShortName)\include;$(IncludePath)</IncludePath>
     <TargetName>$(ProjectName)64</TargetName>
-    <LibraryPath>$(SolutionDir)icu\lib64;$(SolutionDir)zlib\x64\lib;$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSDK_LibraryPath_x64);$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)icu\lib64;$(SolutionDir)zlib\$(PlatformShortName)\lib;$(SolutionDir)boost\$(PlatformShortName)\lib;$(OutDir);$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSDK_LibraryPath_x64);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <LibraryPath>$(SolutionDir)icu\lib;$(SolutionDir)zlib\x86\lib;$(LibraryPath)</LibraryPath>
-    <IncludePath>$(SolutionDir)wolfssl;$(SolutionDir)icu\include;$(SolutionDir)zlib\x86\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)icu\lib;$(SolutionDir)zlib\$(PlatformShortName)\lib;$(SolutionDir)boost\$(PlatformShortName)\lib;$(OutDir);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)wolfssl;$(SolutionDir)icu\include;$(SolutionDir)WTL\Include;$(SolutionDir)boost\$(PlatformShortName)\include\boost-1_59;$(SolutionDir)zlib\$(PlatformShortName)\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(SolutionDir)$(Configuration)$(Platform)\</OutDir>
-    <IntDir>$(Configuration)$(Platform)\</IntDir>
     <TargetName>$(ProjectName)64</TargetName>
-    <LibraryPath>$(SolutionDir)icu\lib64;$(SolutionDir)zlib\x64\lib;$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSDK_LibraryPath_x64);$(LibraryPath)</LibraryPath>
-    <IncludePath>$(SolutionDir)wolfssl;$(SolutionDir)icu\include;D:\Program\WTL81_12085\Include;$(SolutionDir)zlib\x64\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)icu\lib64;$(SolutionDir)zlib\$(PlatformShortName)\lib;$(SolutionDir)boost\$(PlatformShortName)\lib;$(OutDir);$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSDK_LibraryPath_x64);$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)wolfssl;$(SolutionDir)icu\include;$(SolutionDir)WTL\Include;$(SolutionDir)boost\$(PlatformShortName)\include\boost-1_59;$(SolutionDir)zlib\$(PlatformShortName)\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -108,6 +105,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>libcmt.lib</IgnoreSpecificDefaultLibraries>
+      <AdditionalDependencies>zlib.lib;icuuc.lib;wolfssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <Culture>0x0411</Culture>
@@ -143,6 +141,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>msvcrt.lib</IgnoreSpecificDefaultLibraries>
+      <AdditionalDependencies>zlib.lib;icuuc.lib;wolfssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <Culture>0x0411</Culture>
@@ -180,6 +179,7 @@
       <TargetMachine>MachineX86</TargetMachine>
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>zlib.lib;icuuc.lib;wolfssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <Culture>0x0411</Culture>
@@ -221,6 +221,7 @@
       <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>msvcrt.lib</IgnoreSpecificDefaultLibraries>
+      <AdditionalDependencies>zlib.lib;icuuc.lib;wolfssl.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <Culture>0x0411</Culture>

@@ -27,7 +27,6 @@
 #define __zlibbuffer__
 
 //#define ZLIB_WINAPI
-#define ZLIB_DLL
 #include <zlib.h>       // (zlib 1.2.8)
 #include <string>
 #include <sstream>
