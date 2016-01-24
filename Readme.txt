@@ -104,6 +104,7 @@ HAVE_SESSION_TICKET
 HAVE_SNI
 HAVE_SECURE_RENEGOTIATION
 HAVE_SUPPORTED_CURVES
+HAVE_CERTIFICATE_STATUS_REQUEST_V2
 WOLFSSL_RIPEMD
 WOLFSSL_SHA384
 WOLFSSL_SHA512
@@ -120,12 +121,12 @@ HAVE_AESCCM
 HAVE_CAMELLIA
 HAVE_ECC
 HAVE_OCSP
-WOLFSSL_AESNI
 HAVE_TLS_EXTENSIONS
 HAVE_SESSION_TICKET
 HAVE_SNI
 HAVE_SECURE_RENEGOTIATION
 HAVE_SUPPORTED_CURVES
+HAVE_CERTIFICATE_STATUS_REQUEST_V2
 WOLFSSL_RIPEMD
 WOLFSSL_SHA384
 WOLFSSL_SHA512
@@ -133,6 +134,7 @@ WOLFSSL_STATIC_RSA
 NO_RC4
 NO_HC128
 NO_PSK
+WOLFSSL_AESNI
 
 wolfsslのプロパティページ C/C++ -> コード生成
 ランタイムライブラリを 構成がDebug なら"マルチスレッド デバッグ (/MTd)" へ変更
@@ -144,9 +146,9 @@ Releaseなら"マルチスレッド (/MT)" へ変更してください
 これでビルドが通るはずです
 
 
-v1.55の以下の修正はwolfSSL側のソースを修正する必要があります
+v1.66の以下の修正はwolfSSL側のソースを修正する必要があります
 ・サーバーから送られてくるルートCA証明書がおかしいとき"ASN no signer error to confirm failure"の警告が出るのを修正
-internal.cの 4175行目あたりを
+internal.cの 4305行目あたりを
 
 // before
 WOLFSSL_MSG("Failed to verify CA from chain");
@@ -154,10 +156,12 @@ WOLFSSL_MSG("Failed to verify CA from chain");
 // after
 WOLFSSL_MSG("Failed to verify CA from chain");
 
-if (count == totalCerts && count > 2) {
+if (count > 2) {
 	if (ret == ASN_NO_SIGNER_E || ret == ASN_SIG_CONFIRM_E) {
 		ret = 0;	// 最上位のみ見逃す
 	}
 }
 // ==============================================
 
+■開発支援
+https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=D4WWS368DZKPS

@@ -29,7 +29,7 @@
 #include <deque>
 #include <mutex>
 #include <memory>
-#include <set>
+#include <unordered_set>
 #include "Node.h"
 #include "proximodo\memory.h"
 #include "proximodo\url.h"
@@ -56,7 +56,6 @@ public:
 	const UChar* match(const UChar* start, const UChar* stop, MatchData* pMatch) override;
 	
 private:
-    int	 m_pos;
     bool m_maxFirst;
     bool m_tab[256];
     bool m_useTab;
@@ -123,7 +122,7 @@ public:
 class CNode_Quote : public CNode
 {
 public:
-	CNode_Quote(UChar q) : CNode(QUOTE), m_quote(q), m_matched(false), m_openingQuote(nullptr) { }
+	CNode_Quote(UChar q) : CNode(QUOTE), m_quote(q), m_openingQuote(nullptr) { }
     ~CNode_Quote() { }
 
 	void setOpeningQuote(CNode_Quote* node) { m_openingQuote = node; }
@@ -134,7 +133,6 @@ public:
 
 private:
     UChar m_quote;                 // can be ' or "
-    UChar m_matched;
     CNode_Quote* m_openingQuote;  // points to next ' in run, if any
 };
 
@@ -216,7 +214,7 @@ public:
 	const UChar* match(const UChar* start, const UChar* stop, MatchData* pMatch) override;
 
 private:
-	std::set<UChar>	m_setChars;
+	std::unordered_set<UChar>	m_setChars;
 	bool m_byte[256];
     bool m_allow;
 };
@@ -378,6 +376,7 @@ private:
 	int	m_memoryPos;	// 	'0'-'9' or '-1'(stack)
 
     CNode_Memory* m_memorizer;
+	bool	m_contentNodeIsAnd;
     //const UChar* m_recordPos;
 };
 
