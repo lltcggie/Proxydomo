@@ -25,6 +25,7 @@
 #include "RequestManager.h"
 #include <sstream>
 #include <limits>
+#include <filesystem>
 #include <boost\lexical_cast.hpp>
 #include "DebugWindow.h"
 #include "Log.h"
@@ -37,6 +38,9 @@
 #include "Logger.h"
 #include "CodeConvert.h"
 #include "ConnectionMonitor.h"
+#include "BlockListDatabase.h"
+
+using namespace std::tr2::sys;
 using namespace CodeConvert;
 
 #define CR	'\r'
@@ -103,17 +107,6 @@ CRequestManager::CRequestManager(std::unique_ptr<CSocket>&& psockBrowser) :
 	m_RequestCountFromBrowser(0)
 {
 	m_filterOwner.requestNumber = 0;
-
-	CSettings::EnumActiveFilter([&, this](CFilterDescriptor* filter) {
-		try {
-			if (filter->filterType == filter->kFilterHeadIn)
-				m_vecpInFilter.emplace_back(new CHeaderFilter(*filter, m_filterOwner));
-			else if (filter->filterType == filter->kFilterHeadOut)
-				m_vecpOutFilter.emplace_back(new CHeaderFilter(*filter, m_filterOwner));
-		} catch (...) {
-			// Invalid filters are just ignored
-		}
-	});
 
 	m_connectionData = CConnectionManager::CreateConnectionData();
 }
@@ -245,6 +238,24 @@ void	CRequestManager::SwitchToInvalid()
 	}
 }
 
+void	CRequestManager::_ReloadHeaderFilters()
+{
+	if (m_lastFiltersEnumTime != CSettings::s_lastFiltersSaveTime) {
+		m_vecpInFilter.clear();
+		m_vecpOutFilter.clear();
+		m_lastFiltersEnumTime = CSettings::EnumActiveFilter([&, this](CFilterDescriptor* filter) {
+			try {
+				if (filter->filterType == filter->kFilterHeadIn)
+					m_vecpInFilter.emplace_back(new CHeaderFilter(*filter, m_filterOwner));
+				else if (filter->filterType == filter->kFilterHeadOut)
+					m_vecpOutFilter.emplace_back(new CHeaderFilter(*filter, m_filterOwner));
+			}
+			catch (...) {
+				// Invalid filters are just ignored
+			}
+		});
+	}
+}
 
 void	CRequestManager::_JudgeManageContinue()
 {
@@ -371,6 +382,8 @@ void CRequestManager::_ProcessOut()
 			{
 				if (m_recvOutBuf.empty())
 					return ;			// 処理するのに十分なデータがないので帰る
+
+				_ReloadHeaderFilters();
 			
 				m_outStep = STEP::STEP_FIRSTLINE;
 				m_connectionData->SetOutStep(m_outStep);
@@ -444,8 +457,13 @@ void CRequestManager::_ProcessOut()
 
 				// Get the URL and the host to contact (unless we use a proxy)
 				if (m_pSSLClientSession) {
-					std::wstring sslurl = L"https://" + m_filterOwner.url.getHost()	+ UTF16fromUTF8(m_requestLine.url);
-					m_filterOwner.url.parseUrl(sslurl);
+					if (m_requestLine.url.length() > 0 && m_requestLine.url[0] == L'/') {
+						std::wstring sslurl = L"https://" + m_filterOwner.url.getHost() + UTF16fromUTF8(m_requestLine.url);
+						m_filterOwner.url.parseUrl(sslurl);
+					} else {
+						ATLASSERT(::strncmp(m_requestLine.url.c_str(), "https://", 0) == 0);
+						m_filterOwner.url.parseUrl(UTF16fromUTF8(m_requestLine.url));
+					}
 				} else if (m_requestLine.method == "CONNECT") {
 					m_filterOwner.url.parseUrl(L"https://" + UTF16fromUTF8(m_requestLine.url) + L"/");
 				} else {
@@ -551,7 +569,11 @@ void CRequestManager::_ProcessOut()
 							break;
 						}
 					}
-     
+				}
+
+				// CONNECTリクエストで$FILTER(false)された場合はバイパス扱いする
+				if (m_requestLine.method == "CONNECT" && m_filterOwner.bypassBody) {
+					m_bypass = true;
 				}
 
 				// CONNECTリクエストはリダイレクトしないようにする
@@ -616,6 +638,10 @@ void CRequestManager::_ProcessOut()
 					CLog::HttpEvent(kLogHttpSendOut, m_ipFromAddress, m_filterOwner.requestNumber, m_sendOutBuf);
 
 					m_sendOutBuf += CRLF;
+
+				} else {	// m_inStep != STEP::STEP_START
+					CLog::AddNewRequest(m_filterOwner.requestNumber, m_filterOwner.responseLine.code, "", "-1",
+						UTF8fromUTF16(m_filterOwner.url.getUrl()), m_filterOwner.killed);
 				}
 
 				// Decide next step
@@ -870,7 +896,7 @@ void CRequestManager::_ConnectWebsite()
 
 		if (m_filterOwner.url.getProtocol() == L"https") {
 			if (CSettings::s_SSLFilter && m_bypass == false) {
-				if (m_pSSLServerSession = CSSLSession::InitClientSession(m_psockWebsite.get(), name)) {
+				if (m_pSSLServerSession = CSSLSession::InitClientSession(m_psockWebsite.get(), name, m_psockBrowser.get())) {
 					if (m_requestLine.method == "CONNECT") {
 						m_pSSLClientSession = CSSLSession::InitServerSession(m_psockBrowser.get(), name);
 					} else {
@@ -972,6 +998,11 @@ bool	CRequestManager::_HandleLocalPtron()
 
 			subpath = L"./html" + CUrl(m_filterOwner.rdirToHost).getPath();
 		}
+
+		if (ManageCertificateAPI(m_requestLine.url, m_pSSLClientSession.get())) {
+			return true;
+		}
+
 		wstring filename = CUtil::makePath(subpath);
 		if (::PathFileExists(Misc::GetFullPath_ForExe(filename.c_str()))) {
 			_FakeResponse("200 OK", filename);
@@ -988,10 +1019,29 @@ bool	CRequestManager::_HandleLocalPtron()
 	// ($JUMP to file will behave like a transparent redirection,
 	// since the browser may not be on the same file system)
 	if (CUtil::noCaseBeginsWith(L"http://file//", m_filterOwner.rdirToHost)) {
+		path filepath = CUtil::makePath(m_filterOwner.rdirToHost.substr(13));
+		path fullpath = (LPCWSTR)Misc::GetFullPath_ForExe(filepath.native().c_str());
+		if (is_directory(fullpath)) {
+			// フォルダが存在するかつ URLの末尾が '/' で終わっていなければ フォルダ名 + L'/' へリダイレクトさせる
+			if (filepath.native().back() != L'\\') {				
+				m_filterOwner.rdirToHost = L"http://local.ptron/" + filepath.native().substr(7) + L'/';
+				m_filterOwner.rdirMode = 0;
+				return false;
+			}
 
-		wstring filename = CUtil::makePath(m_filterOwner.rdirToHost.substr(13));
-		if (::PathFileExists(Misc::GetFullPath_ForExe(filename.c_str()))) {
-			_FakeResponse("200 OK", filename);
+			fullpath /= L"index.html";
+			filepath /= L"index.html";
+		}
+
+		if (auto blockListDB = CBlockListDatabase::GetInstance()) {
+			if (blockListDB->ManageBlockListInfoAPI(m_filterOwner.url, m_psockBrowser.get())) {
+				m_filterOwner.rdirToHost.clear();
+				return true;
+			}
+		}
+
+		if (exists(fullpath)) {
+			_FakeResponse("200 OK", filepath.native());
 		} else {
 			_FakeResponse("404 Not Found");
 		}
@@ -1281,6 +1331,8 @@ void	CRequestManager::_ProcessIn()
 							if (CUtil::noCaseEqual(name, pair.first))
 								headerfilter->filter(pair.second);
 						}
+
+						CFilterOwner::RemoveHeader(m_filterOwner.inHeadersFiltered, L"URL");
 						// Remove null headers
 						CFilterOwner::CleanHeader(m_filterOwner.inHeadersFiltered);
 
@@ -1303,6 +1355,10 @@ void	CRequestManager::_ProcessIn()
 					// (This function will also take care of incoming variables)
 					_ConnectWebsite();
 					++m_redirectedIn;
+
+					CLog::AddNewRequest(m_filterOwner.requestNumber, m_filterOwner.responseLine.code, contentType,
+						m_inChunked ? std::string("-1") : contentLength,
+						UTF8fromUTF16(m_filterOwner.url.getUrl()), m_filterOwner.killed);
 					continue;
 				}
 
@@ -1383,7 +1439,9 @@ void	CRequestManager::_ProcessIn()
 					//m_filterOwner.fileType.clear();	// ここでは消さない
 				}
 
-				CLog::AddNewRequest(m_filterOwner.requestNumber, m_filterOwner.responseLine.code, contentType, m_inChunked ? std::string("-1") : contentLength, UTF8fromUTF16(m_filterOwner.url.getUrl()));
+				CLog::AddNewRequest(m_filterOwner.requestNumber, m_filterOwner.responseLine.code, contentType, 
+									m_inChunked ? std::string("-1") : contentLength, 
+									UTF8fromUTF16(m_filterOwner.url.getUrl()), m_filterOwner.killed);
 
 				// Decide what to do next
 				if (m_filterOwner.responseLine.code == "101") {
@@ -1582,6 +1640,7 @@ bool	CRequestManager::_VerifyContentType(std::string& ctype)
       slash += 2;
     std::string type = ctype.substr(slash, end - slash);
     CUtil::lower(type);
+	CUtil::trim(type);
 
     if (type == "html") {
 		m_filterOwner.fileType = "htm";

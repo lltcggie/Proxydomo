@@ -22,6 +22,7 @@
 */
 #include "stdafx.h"
 #include "FilterOwner.h"
+#include <boost/range/algorithm_ext/erase.hpp>
 #include "proximodo\util.h"
 
 CFilterOwner::CFilterOwner()
@@ -94,12 +95,9 @@ void		CFilterOwner::SetHeader(HeadPairList& headers, const std::wstring& name, c
 
 void		CFilterOwner::RemoveHeader(HeadPairList& headers, const std::wstring& name)
 {
-	for (auto it = headers.begin(); it != headers.end(); ++it) {
-        if (CUtil::noCaseEqual(name, it->first)) {
-            headers.erase(it);
-            it = headers.begin();
-        }
-    }
+	boost::remove_erase_if(headers, [&name](const std::pair<std::wstring, std::wstring>& header) {
+		return CUtil::noCaseEqual(name, header.first);
+	});
 }
 
 
@@ -107,11 +105,8 @@ void		CFilterOwner::RemoveHeader(HeadPairList& headers, const std::wstring& name
  */
 void CFilterOwner::CleanHeader(HeadPairList& headers)
 {
-	for (auto it = headers.begin(); it != headers.end(); ++it) {
-		if (it->second.empty()) {
-            headers.erase(it);
-            it = headers.begin();
-        }
-    }    
+	boost::remove_erase_if(headers, [](const std::pair<std::wstring, std::wstring>& header) {
+		return header.second.empty();
+	});
 }
 

@@ -43,6 +43,8 @@
 #include "Matcher.h"
 #include "DirectoryWatcher.h"
 #include "UITranslator.h"
+#include "AdblockFilter.h"
+#include "BlockListDatabase.h"
 
 using namespace CodeConvert;
 using namespace boost::property_tree;
@@ -72,10 +74,12 @@ std::wstring	CSettings::s_urlCommandPrefix;
 std::wstring	CSettings::s_language = kDefaultLanguage;
 
 bool			CSettings::s_tasktrayOnCloseBotton = false;
+bool			CSettings::s_saveBlockListUsageSituation = false;
 
 std::thread		CSettings::s_threadSaveFilter;
 
 std::vector<std::unique_ptr<FilterItem>>	CSettings::s_vecpFilters;
+std::chrono::steady_clock::time_point		CSettings::s_lastFiltersSaveTime;
 CCriticalSection							CSettings::s_csFilters;
 
 std::shared_ptr<Proxydomo::CMatcher>	CSettings::s_pBypassMatcher;
@@ -139,6 +143,8 @@ void	CSettings::LoadSettings()
 
 			if (auto value = pt.get_optional<bool>("Setting.tasktrayOnCloseBotton"))
 				s_tasktrayOnCloseBotton = value.get();
+			if (auto value = pt.get_optional<bool>("Setting.saveBlockListUsageSituation"))
+				s_saveBlockListUsageSituation = value.get();
 		}
 		catch (...) {
 			MessageBox(NULL, GetTranslateMessage(ID_LOADSETTINGFAILED).c_str(), GetTranslateMessage(ID_TRANS_ERROR).c_str(), MB_ICONERROR);
@@ -165,17 +171,29 @@ void	CSettings::LoadSettings()
 
 	CSettings::LoadFilter();
 
-	// lists フォルダからブロックリストを読み込む
-	std::function<void(const CString&, bool)> funcForEach;
-	funcForEach = [&funcForEach](const CString& path, bool bFolder) {
-		if (bFolder) {
-			if (Misc::GetFileBaseName(path).Left(1) != L"#")
-				ForEachFileFolder(path, funcForEach);
-		} else {
-			LoadList(path);
+	CBlockListDatabase::GetInstance()->Init();
+	{
+		auto blockListDB = CBlockListDatabase::GetInstance();
+		std::unique_lock<CBlockListDatabase> lockdb;
+		if (blockListDB) {
+			lockdb = std::unique_lock<CBlockListDatabase>(*blockListDB);
 		}
-	};
-	ForEachFileFolder(Misc::GetExeDirectory() + _T("lists\\"), funcForEach);
+		// lists フォルダからブロックリストを読み込む
+		std::function<void(const CString&, bool)> funcForEach;
+		funcForEach = [&funcForEach](const CString& path, bool bFolder) {
+			if (bFolder) {
+				if (Misc::GetFileBaseName(path).Left(1) != L"#")
+					ForEachFileFolder(path, funcForEach);
+			} else {
+				LoadList(path);
+			}
+		};
+		ForEachFileFolder(Misc::GetExeDirectory() + _T("lists\\"), funcForEach);
+
+		if (blockListDB) {
+			blockListDB->DeleteNoExistList();
+		}
+	}
 
 	g_listChangeWatcher.SetCallbackFunction([](const CString& filePath) {
 		enum { kMaxRetry = 30, kSleepTime = 100 };
@@ -187,6 +205,11 @@ void	CSettings::LoadSettings()
 			}
 			CloseHandle(hTestOpen);
 			break;
+		}
+		auto blockListDB = CBlockListDatabase::GetInstance();
+		std::unique_lock<CBlockListDatabase> lockdb;
+		if (blockListDB) {
+			lockdb = std::unique_lock<CBlockListDatabase>(*blockListDB);
 		}
 		CSettings::LoadList(filePath);
 	});
@@ -231,6 +254,7 @@ void	CSettings::SaveSettings()
 	pt.put("Setting.language", UTF8fromUTF16(s_language));
 
 	pt.put<bool>("Setting.tasktrayOnCloseBotton", s_tasktrayOnCloseBotton);
+	pt.put<bool>("Setting.saveBlockListUsageSituation", s_saveBlockListUsageSituation);	
 
 	write_ini(settingsPath, pt);
 }
@@ -297,6 +321,7 @@ void CSettings::LoadFilter()
 		wptree& ptChild = opChild.get();
 		LoadFilterItem(ptChild, s_vecpFilters);
 	}
+	s_lastFiltersSaveTime = std::chrono::steady_clock::now();
 }
 
 void	SaveFilterItem(std::vector<std::unique_ptr<FilterItem>>& vecpFilter, wptree& pt, std::atomic<bool>& bCansel)
@@ -351,6 +376,8 @@ void CSettings::SaveFilter()
 		}
 	};
 	funcCopy(&s_vecpFilters, pFilter);
+
+	s_lastFiltersSaveTime = std::chrono::steady_clock::now();
 
 	static CCriticalSection	 s_cs;
 	static std::atomic<bool> s_bCancel(false);
@@ -427,10 +454,11 @@ static void ActiveFilterCallFunc(std::vector<std::unique_ptr<FilterItem>>& vecFi
 	}
 }
 
-void CSettings::EnumActiveFilter(std::function<void (CFilterDescriptor*)> func)
+std::chrono::steady_clock::time_point CSettings::EnumActiveFilter(std::function<void (CFilterDescriptor*)> func)
 {
 	CCritSecLock	lock(CSettings::s_csFilters);
 	ActiveFilterCallFunc(s_vecpFilters, func);
+	return s_lastFiltersSaveTime;
 }
 
 /// 最終書き込み時刻を取得
@@ -480,25 +508,40 @@ void CSettings::LoadList(const CString& filePath)
 		return ;	// 更新されていなかったら帰る
 	hashedLists->prevLastWriteTime = lastWriteTime;
 
-	std::wifstream fs(filePath, std::ios::in | std::ios::binary);
-	if (!fs)
-		return ;
+	std::wifstream fs(filePath, std::ios::in);
+	if (!fs) {
+		ERROR_LOG << L"CSettings::LoadList file open error : " << (LPCTSTR)filePath;
+		return;
+	}
 	fs.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t, 0x10ffff, std::codecvt_mode::consume_header>));
+
+	auto blockListDB = CBlockListDatabase::GetInstance();
+	if (blockListDB) {
+		blockListDB->AddList(filename);
+	}
+	std::time_t updateTime = std::time(nullptr);
 	int successLoadLineCount = 0;
 	{
 		hashedLists->PreHashWordList.clear();
 		hashedLists->URLHashList.clear();
 		hashedLists->deqNormalNode.clear();
+		hashedLists->adblockFilter.reset();
 
 		std::wstring pattern;
 		std::wstring strLine;
 		int nLineCount = 0;
 		bool	bAddPattern = false;
 		while (std::getline(fs, strLine)) {
-			if (bAddPattern == false && nLineCount < 6 && strLine.length() && strLine[0] == L'#') {
-				if (boost::algorithm::contains(strLine, L"LOGFILE")) {
+			if (bAddPattern == false && nLineCount < 6 && strLine.length()) {
+				if (strLine[0] == L'#' && boost::algorithm::contains(strLine, L"LOGFILE")) {
 					hashedLists->bLogFile = true;
 					break;	// LogFile
+
+				} else if (nLineCount == 0) {
+					if (boost::starts_with(strLine, L"[Adblock Plus")) {
+						hashedLists->adblockFilter = LoadAdblockFilter(fs, filename);
+						return ;	// 
+					}
 				}
 			}
 
@@ -514,6 +557,9 @@ void CSettings::LoadList(const CString& filePath)
 					if (bSuccess == false) {
 						CLog::FilterEvent(kLogFilterListBadLine, nLineCount, filename, "");
 					} else {
+						if (blockListDB) {
+							blockListDB->AddPatternToList(filename, pattern, nLineCount, updateTime);
+						}
 						++successLoadLineCount;
 					}
 				}
@@ -533,10 +579,17 @@ void CSettings::LoadList(const CString& filePath)
 			if (bSuccess == false) {
 				CLog::FilterEvent(kLogFilterListBadLine, nLineCount, filename, "");
 			} else {
+				if (blockListDB) {
+					blockListDB->AddPatternToList(filename, pattern, nLineCount, updateTime);
+				}
 				++successLoadLineCount;
 			}
 		}
 		hashedLists->lineCount = nLineCount;
+	}
+	if (blockListDB) {
+		blockListDB->UpdateList(filename, "normal", successLoadLineCount);
+		blockListDB->DeleteOldPatternFromList(filename, updateTime);
 	}
 	CLog::FilterEvent(kLogFilterListReload, successLoadLineCount, filename, "");
 }

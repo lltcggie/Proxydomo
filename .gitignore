@@ -33,10 +33,13 @@ zlib*/
 clx/
 \#Release/
 icu/
+/icu
 srell/
 GnuTLS*/
 mingw/
 wolfssl/
+/wolfssl
 packages/
 Test/
+Testx64/
 Proxydomo/Test/

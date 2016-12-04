@@ -93,12 +93,12 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>$(SolutionDir)icu\lib;$(SolutionDir)zlib\$(PlatformShortName)\lib;$(SolutionDir)boost\$(PlatformShortName)\lib;$(OutDir);$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)sqlite\$(PlatformName);$(SolutionDir)icu\lib;$(SolutionDir)zlib\$(PlatformShortName)\lib;$(SolutionDir)boost\$(PlatformShortName)\lib;$(OutDir);$(LibraryPath)</LibraryPath>
     <IncludePath>$(SolutionDir)wolfssl;$(SolutionDir)icu\include;$(SolutionDir)WTL\Include;$(SolutionDir)boost\$(PlatformShortName)\include\boost-1_59;$(SolutionDir)zlib\$(PlatformShortName)\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Test|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <LibraryPath>$(SolutionDir)icu\lib;$(SolutionDir)zlib\x86\lib;D:\Program\boost_1_56_0\lib\lib;$(SolutionDir)googletest\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)sqlite\$(PlatformName);$(SolutionDir)icu\lib;$(SolutionDir)zlib\x86\lib;$(SolutionDir)sqlite\Win32;D:\Program\boost_1_56_0\lib\lib;$(SolutionDir)googletest\lib;$(LibraryPath)</LibraryPath>
     <IncludePath>$(SolutionDir)wolfssl;$(SolutionDir)icu\include;$(SolutionDir)zlib\x86\include;$(SolutionDir)googletest;$(IncludePath)</IncludePath>
     <TargetName>$(ProjectName)test</TargetName>
   </PropertyGroup>
@@ -106,25 +106,27 @@
     <LinkIncremental>true</LinkIncremental>
     <IncludePath>$(SolutionDir)wolfssl;$(SolutionDir)icu\include;$(SolutionDir)WTL\Include;$(SolutionDir)boost\$(PlatformShortName)\include\boost-1_59;$(SolutionDir)zlib\$(PlatformShortName)\include;$(IncludePath)</IncludePath>
     <TargetName>$(ProjectName)64</TargetName>
-    <LibraryPath>$(SolutionDir)icu\lib64;$(SolutionDir)zlib\$(PlatformShortName)\lib;$(SolutionDir)boost\$(PlatformShortName)\lib;$(OutDir);$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSDK_LibraryPath_x64);$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)icu\lib64;$(SolutionDir)zlib\x64\lib;$(SolutionDir)sqlite\Win64;$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSDK_LibraryPath_x64);$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)sqlite\Win$(PlatformArchitecture);$(SolutionDir)icu\lib64;$(SolutionDir)zlib\$(PlatformShortName)\lib;$(SolutionDir)boost\$(PlatformShortName)\lib;$(OutDir);$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSDK_LibraryPath_x64);$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Test|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)wolfssl;$(SolutionDir)icu\include;D:\Program\WTL81_12085\Include;$(SolutionDir)zlib\x64\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)wolfssl;$(SolutionDir)icu\include;D:\Program\WTL81_12085\Include;$(SolutionDir)zlib\x64\include;$(SolutionDir)googletest;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)$(Configuration)$(Platform)\</OutDir>
     <IntDir>$(Configuration)$(Platform)\</IntDir>
     <TargetName>$(ProjectName)64</TargetName>
-    <LibraryPath>$(SolutionDir)icu\lib64;$(SolutionDir)zlib\x64\lib;$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSDK_LibraryPath_x64);$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)sqlite\Win$(PlatformArchitecture);$(SolutionDir)icu\lib64;$(SolutionDir)zlib\x64\lib;$(SolutionDir)sqlite\Win64;$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSDK_LibraryPath_x64);$(SolutionDir)googletest\lib64;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <LibraryPath>$(SolutionDir)icu\lib;$(SolutionDir)zlib\$(PlatformShortName)\lib;$(SolutionDir)boost\$(PlatformShortName)\lib;$(OutDir);$(LibraryPath)</LibraryPath>
     <IncludePath>$(SolutionDir)wolfssl;$(SolutionDir)icu\include;$(SolutionDir)WTL\Include;$(SolutionDir)boost\$(PlatformShortName)\include\boost-1_59;$(SolutionDir)zlib\$(PlatformShortName)\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)sqlite\$(PlatformName);$(SolutionDir)icu\lib;$(SolutionDir)zlib\x86\lib;$(SolutionDir)sqlite\Win32;C:\Program Files (x86)\Windows Kits\8.1\Lib\winv6.3\um\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetName>$(ProjectName)64</TargetName>
-    <LibraryPath>$(SolutionDir)icu\lib64;$(SolutionDir)zlib\$(PlatformShortName)\lib;$(SolutionDir)boost\$(PlatformShortName)\lib;$(OutDir);$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSDK_LibraryPath_x64);$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)sqlite\Win$(PlatformArchitecture);$(SolutionDir)icu\lib64;$(SolutionDir)zlib\$(PlatformShortName)\lib;$(SolutionDir)boost\$(PlatformShortName)\lib;$(OutDir);$(VCInstallDir)lib\amd64;$(VCInstallDir)atlmfc\lib\amd64;$(WindowsSDK_LibraryPath_x64);$(LibraryPath)</LibraryPath>
     <IncludePath>$(SolutionDir)wolfssl;$(SolutionDir)icu\include;$(SolutionDir)WTL\Include;$(SolutionDir)boost\$(PlatformShortName)\include\boost-1_59;$(SolutionDir)zlib\$(PlatformShortName)\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -244,7 +246,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
-      <PreprocessorDefinitions>WOLFSSL_CERT_GEN;WOLFSSL_KEY_GEN;HAVE_AESGCM;HAVE_AESCCM;HAVE_CAMELLIA;HAVE_ECC;HAVE_OCSP;WOLFSSL_AESNI;HAVE_TLS_EXTENSIONS;HAVE_SESSION_TICKET;HAVE_SNI;HAVE_SECURE_RENEGOTIATION;HAVE_SUPPORTED_CURVES;WOLFSSL_RIPEMD;WOLFSSL_SHA384;WOLFSSL_SHA512;WOLFSSL_STATIC_RSA;NO_RC4;NO_PSK;WIN32;_WINDOWS;STRICT;NOMINMAX;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WOLFSSL_CERT_GEN;WOLFSSL_KEY_GEN;HAVE_AESGCM;HAVE_AESCCM;HAVE_CAMELLIA;HAVE_ECC;HAVE_OCSP;WOLFSSL_AESNI;HAVE_TLS_EXTENSIONS;HAVE_SESSION_TICKET;HAVE_SNI;HAVE_SECURE_RENEGOTIATION;HAVE_SUPPORTED_CURVES;WOLFSSL_RIPEMD;WOLFSSL_SHA384;WOLFSSL_SHA512;WOLFSSL_STATIC_RSA;NO_RC4;NO_PSK;WIN32;_WINDOWS;STRICT;NOMINMAX;_DEBUG;UNIT_TEST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
@@ -310,7 +312,8 @@
       <DllDataFileName />
     </Midl>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "$(SolutionDir)#Release\Proxydomo\"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -352,13 +355,17 @@
       </DllDataFileName>
     </Midl>
     <PostBuildEvent>
-      <Command>copy "$(TargetPath)" "$(SolutionDir)#Release\Proxydomo64\"</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AdblockFilter.cpp" />
+    <ClCompile Include="BlockListDatabase.cpp" />
     <ClCompile Include="CodeConvert.cpp" />
     <ClCompile Include="ConnectionMonitor.cpp" />
     <ClCompile Include="DebugWindow.cpp" />
+    <ClCompile Include="DomainJudge.cpp" />
     <ClCompile Include="FilterDescriptor.cpp" />
     <ClCompile Include="FilterEditWindow.cpp" />
     <ClCompile Include="FilterManageWindow.cpp" />
@@ -701,12 +708,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AboutDlg.h" />
+    <ClInclude Include="AdblockFilter.h" />
     <ClInclude Include="AppConst.h" />
+    <ClInclude Include="BlockListDatabase.h" />
     <ClInclude Include="CodeConvert.h" />
     <ClInclude Include="ConnectionMonitor.h" />
     <ClInclude Include="DataReceptor.h" />
     <ClInclude Include="DebugWindow.h" />
     <ClInclude Include="DirectoryWatcher.h" />
+    <ClInclude Include="DomainJudge.h" />
     <ClInclude Include="FilterDescriptor.h" />
     <ClInclude Include="FilterEditWindow.h" />
     <ClInclude Include="FilterManageWindow.h" />
@@ -1016,7 +1026,10 @@
     <Image Include="res\FilterManagerToolBar.bmp" />
     <Image Include="res\folder.ico" />
     <Image Include="res\HeaderFilter.ico" />
+    <Image Include="res\icon1.ico" />
     <Image Include="res\Proxydomo.ico" />
+    <Image Include="res\Proxydomo_bypass.ico" />
+    <Image Include="res\StatusAnnotations_Critical_16xLG.ico" />
     <Image Include="res\WebFilter.ico" />
   </ItemGroup>
   <ItemGroup>
